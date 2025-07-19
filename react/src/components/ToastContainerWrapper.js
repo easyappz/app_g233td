@@ -15,7 +15,7 @@ const ToastContainerWrapper = () => {
       position="top-right"
       autoClose={5000}
       hideProgressBar={false}
-      newestOnTop={false}
+      newestOnTop={true}
       closeOnClick
       rtl={false}
       pauseOnFocusLoss
@@ -26,8 +26,9 @@ const ToastContainerWrapper = () => {
         backgroundColor: theme.palette.background.paper,
         color: theme.palette.text.primary,
         borderRadius: theme.shape.borderRadius,
-        boxShadow: theme.shadows[1],
+        boxShadow: theme.shadows[2],
         fontFamily: theme.typography.fontFamily,
+        border: `1px solid ${theme.palette.divider}`,
       }}
       progressStyle={{
         backgroundColor: theme.palette.primary.main,
