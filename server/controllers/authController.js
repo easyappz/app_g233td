@@ -1,10 +1,16 @@
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
+const { generateToken } = require('../utils/jwt');
 
 // Register a new user
 exports.register = async (req, res) => {
   try {
     const { username, email, password } = req.body;
+
+    // Validate input
+    if (!username || !email || !password) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
 
     // Check if user already exists
     const existingUser = await User.findOne({ $or: [{ username }, { email }] });
@@ -24,7 +30,15 @@ exports.register = async (req, res) => {
 
     await newUser.save();
 
-    res.status(201).json({ message: 'User registered successfully', userId: newUser._id });
+    // Generate JWT token
+    const token = generateToken(newUser._id, newUser.username);
+
+    res.status(201).json({ 
+      message: 'User registered successfully', 
+      userId: newUser._id, 
+      username: newUser.username,
+      token 
+    });
   } catch (error) {
     console.error('Error during registration:', error);
     res.status(500).json({ error: 'Registration failed' });
@@ -35,6 +49,11 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
+
+    // Validate input
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
 
     // Find user by email
     const user = await User.findOne({ email });
@@ -48,7 +67,15 @@ exports.login = async (req, res) => {
       return res.status(400).json({ error: 'Invalid credentials' });
     }
 
-    res.status(200).json({ message: 'Login successful', userId: user._id, username: user.username });
+    // Generate JWT token
+    const token = generateToken(user._id, user.username);
+
+    res.status(200).json({ 
+      message: 'Login successful', 
+      userId: user._id, 
+      username: user.username, 
+      token 
+    });
   } catch (error) {
     console.error('Error during login:', error);
     res.status(500).json({ error: 'Login failed' });
