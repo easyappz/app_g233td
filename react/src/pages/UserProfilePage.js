@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useHistory } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Box, Typography, Container, Paper, Avatar, Button, Grid, CircularProgress, Divider } from '@mui/material';
 import { Message as MessageIcon } from '@mui/icons-material';
 import PostCard from '../components/PostCard';
@@ -7,7 +7,7 @@ import { instance } from '../api/axios';
 
 function UserProfilePage() {
   const { id } = useParams();
-  const history = useHistory();
+  const navigate = useNavigate();
   const [userData, setUserData] = useState(null);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,11 +37,11 @@ function UserProfilePage() {
     try {
       const currentUserId = localStorage.getItem('userId');
       if (!currentUserId) {
-        history.push('/login');
+        navigate('/login');
         return;
       }
       await instance.post(`/api/messages/send/${currentUserId}/${id}`, { content: 'Привет!' });
-      history.push('/dialogs');
+      navigate('/dialogs');
     } catch (err) {
       console.error('Ошибка при отправке сообщения:', err);
       setError('Не удалось начать диалог');
