@@ -7,6 +7,11 @@ const UserSchema = new mongoose.Schema({
     unique: true,
     trim: true,
   },
+  name: {
+    type: String,
+    required: true,
+    trim: true,
+  },
   email: {
     type: String,
     required: true,
@@ -17,7 +22,7 @@ const UserSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  fullName: {
+  profilePicture: {
     type: String,
     default: '',
   },
@@ -25,18 +30,6 @@ const UserSchema = new mongoose.Schema({
     type: String,
     default: '',
   },
-  profilePicture: {
-    type: String,
-    default: '',
-  },
-  followers: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-  }],
-  following: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-  }],
   createdAt: {
     type: Date,
     default: Date.now,
