@@ -1,35 +1,61 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { AppBar, Toolbar, Typography, Box, IconButton, Avatar } from '@mui/material';
-import { Home, Person, Search, Message } from '@mui/icons-material';
+import { Link, useNavigate } from 'react-router-dom';
+import { AppBar, Toolbar, Typography, Box, Button } from '@mui/material';
+import { useAuth } from '../context/AuthContext';
 
-function Navbar() {
+const Navbar = () => {
+  const { currentUser, logout, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
   return (
-    <AppBar position="fixed" color="primary" elevation={1}>
+    <AppBar position="static" sx={{ backgroundColor: '#1976d2' }}>
       <Toolbar>
-        <Typography variant="h6" component={Link} to="/" sx={{ textDecoration: 'none', color: 'white', flexGrow: 1 }}>
-          СоцСеть
+        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+          <Link to="/" style={{ textDecoration: 'none', color: 'white' }}>
+            Социальная сеть
+          </Link>
         </Typography>
         <Box sx={{ display: 'flex', gap: 2 }}>
-          <IconButton color="inherit" component={Link} to="/feed" title="Лента">
-            <Home />
-          </IconButton>
-          <IconButton color="inherit" component={Link} to="/profile" title="Профиль">
-            <Person />
-          </IconButton>
-          <IconButton color="inherit" component={Link} to="/search" title="Поиск">
-            <Search />
-          </IconButton>
-          <IconButton color="inherit" component={Link} to="/dialogs" title="Сообщения">
-            <Message />
-          </IconButton>
-          <IconButton color="inherit" component={Link} to="/profile">
-            <Avatar sx={{ width: 32, height: 32 }} />
-          </IconButton>
+          {isAuthenticated ? (
+            <>
+              <Button color="inherit" component={Link} to="/feed">
+                Лента
+              </Button>
+              <Button color="inherit" component={Link} to="/profile">
+                Профиль
+              </Button>
+              <Button color="inherit" component={Link} to="/dialogs">
+                Диалоги
+              </Button>
+              <Button color="inherit" component={Link} to="/search-users">
+                Поиск
+              </Button>
+              <Button color="inherit" onClick={handleLogout}>
+                Выйти
+              </Button>
+              <Typography variant="body1" sx={{ alignSelf: 'center', color: 'white' }}>
+                {currentUser?.username || 'Пользователь'}
+              </Typography>
+            </>
+          ) : (
+            <>
+              <Button color="inherit" component={Link} to="/login">
+                Войти
+              </Button>
+              <Button color="inherit" component={Link} to="/register">
+                Регистрация
+              </Button>
+            </>
+          )}
         </Box>
       </Toolbar>
     </AppBar>
   );
-}
+};
 
 export default Navbar;
