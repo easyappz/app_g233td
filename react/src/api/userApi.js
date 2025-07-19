@@ -1,21 +1,10 @@
-import { instance } from './axios';
+import { instance } from './axios.js';
 
 /**
- * Fetch user data by ID
- * @param {string} userId - The ID of the user to fetch
- * @returns {Promise<Object>} - The user data
+ * Fetch current user data
+ * @returns {Promise<Object>} User data
  */
-export const getUserById = async (userId) => {
-  const response = await instance.get(`/api/users/${userId}`);
-  return response.data;
-};
-
-/**
- * Fetch posts of a specific user
- * @param {string} userId - The ID of the user whose posts to fetch
- * @returns {Promise<Array>} - Array of posts
- */
-export const getUserPosts = async (userId) => {
-  const response = await instance.get(`/api/posts/user/${userId}`);
+export const getCurrentUser = async () => {
+  const response = await instance.get('/api/user/me');
   return response.data;
 };

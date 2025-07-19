@@ -11,7 +11,10 @@ function MessageItem({ message, isSentByUser }) {
         alignItems: 'flex-end',
       }}
     >
-      <Avatar src={message.senderAvatar} sx={{ width: 32, height: 32, mr: isSentByUser ? 0 : 2, ml: isSentByUser ? 2 : 0 }} />
+      <Avatar 
+        src={message.sender.avatar || ''} 
+        sx={{ width: 32, height: 32, mr: isSentByUser ? 0 : 2, ml: isSentByUser ? 2 : 0 }} 
+      />
       <Box
         sx={{
           maxWidth: '70%',
@@ -22,7 +25,7 @@ function MessageItem({ message, isSentByUser }) {
           boxShadow: 1,
         }}
       >
-        <Typography variant="body2">{message.text}</Typography>
+        <Typography variant="body2">{message.content}</Typography>
         <Typography variant="caption" sx={{ display: 'block', mt: 0.5, opacity: 0.8 }}>
           {new Date(message.createdAt).toLocaleTimeString('ru-RU')}
         </Typography>
