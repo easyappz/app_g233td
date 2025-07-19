@@ -1,37 +1,19 @@
 import React from 'react';
-import { Box, Typography, Button } from '@mui/material';
-import { Link } from 'react-router-dom';
+import { Container, Typography, Box } from '@mui/material';
 
-function HomePage() {
+const HomePage = () => {
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: 'calc(100vh - 64px)',
-        bgcolor: 'background.default',
-        textAlign: 'center',
-        p: 3,
-      }}
-    >
-      <Typography variant="h2" gutterBottom>
-        Добро пожаловать в СоцСеть
-      </Typography>
-      <Typography variant="h6" color="text.secondary" sx={{ mb: 4, maxWidth: 600 }}>
-        Общайтесь с друзьями, делитесь моментами своей жизни и находите новых знакомых.
-      </Typography>
-      <Box sx={{ display: 'flex', gap: 2 }}>
-        <Button variant="contained" color="primary" size="large" component={Link} to="/login">
-          Войти
-        </Button>
-        <Button variant="outlined" color="primary" size="large" component={Link} to="/register">
-          Зарегистрироваться
-        </Button>
+    <Container component="main" maxWidth="md">
+      <Box sx={{ marginTop: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <Typography component="h1" variant="h4">
+          Добро пожаловать в Социальную Сеть
+        </Typography>
+        <Typography variant="body1" sx={{ mt: 2 }}>
+          Вы успешно вошли в систему!
+        </Typography>
       </Box>
-    </Box>
+    </Container>
   );
-}
+};
 
 export default HomePage;
