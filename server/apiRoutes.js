@@ -31,6 +31,8 @@ router.get('/posts/feed/:userId', protect, postController.getFeed);
 router.post('/posts/:postId/like/:userId', protect, postController.likePost);
 router.post('/posts/:postId/unlike/:userId', protect, postController.unlikePost);
 router.post('/posts/:postId/comment/:userId', protect, postController.commentOnPost);
+router.put('/posts/:postId', protect, postController.editPost);
+router.delete('/posts/:postId', protect, postController.deletePost);
 
 // Message Routes
 router.get('/dialogs/:userId', protect, messageController.getDialogs);
