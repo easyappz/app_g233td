@@ -1,4 +1,5 @@
 import { instance } from './axios';
+import { handleApiError } from '../utils/errorHandler';
 
 /**
  * Fetch current user data
@@ -11,7 +12,7 @@ export const getCurrentUser = async (userId) => {
     return response.data;
   } catch (error) {
     console.error('Ошибка при получении данных пользователя:', error);
-    throw new Error(error.response?.data?.message || 'Не удалось загрузить данные пользователя. Попробуйте снова.');
+    return handleApiError(error, 'Не удалось загрузить данные пользователя. Попробуйте снова.');
   }
 };
 
@@ -27,7 +28,7 @@ export const updateProfile = async (userId, data) => {
     return response.data;
   } catch (error) {
     console.error('Ошибка при обновлении профиля:', error);
-    throw new Error(error.response?.data?.message || 'Не удалось обновить профиль. Попробуйте снова.');
+    return handleApiError(error, 'Не удалось обновить профиль. Попробуйте снова.');
   }
 };
 
@@ -43,7 +44,7 @@ export const followUser = async (userId, targetUserId) => {
     return response.data;
   } catch (error) {
     console.error('Ошибка при подписке на пользователя:', error);
-    throw new Error(error.response?.data?.message || 'Не удалось подписаться на пользователя. Попробуйте снова.');
+    return handleApiError(error, 'Не удалось подписаться на пользователя. Попробуйте снова.');
   }
 };
 
@@ -59,7 +60,7 @@ export const unfollowUser = async (userId, targetUserId) => {
     return response.data;
   } catch (error) {
     console.error('Ошибка при отписке от пользователя:', error);
-    throw new Error(error.response?.data?.message || 'Не удалось отписаться от пользователя. Попробуйте снова.');
+    return handleApiError(error, 'Не удалось отписаться от пользователя. Попробуйте снова.');
   }
 };
 
@@ -76,6 +77,6 @@ export const searchUsers = async (query, page = 1, limit = 10) => {
     return response.data;
   } catch (error) {
     console.error('Ошибка при поиске пользователей:', error);
-    throw new Error(error.response?.data?.message || 'Не удалось выполнить поиск пользователей. Попробуйте снова.');
+    return handleApiError(error, 'Не удалось выполнить поиск пользователей. Попробуйте снова.');
   }
 };

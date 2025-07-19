@@ -1,4 +1,5 @@
 import { instance } from './axios';
+import { handleApiError } from '../utils/errorHandler';
 
 /**
  * Fetch feed posts
@@ -12,7 +13,7 @@ export const getFeedPosts = async (page = 1, limit = 10) => {
     return response.data;
   } catch (error) {
     console.error('Ошибка при получении ленты новостей:', error);
-    throw new Error(error.response?.data?.message || 'Не удалось загрузить ленту новостей. Попробуйте снова.');
+    return handleApiError(error, 'Не удалось загрузить ленту новостей. Попробуйте снова.');
   }
 };
 
@@ -28,7 +29,7 @@ export const createNewPost = async (content, userId) => {
     return response.data;
   } catch (error) {
     console.error('Ошибка при создании поста:', error);
-    throw new Error(error.response?.data?.message || 'Не удалось создать пост. Попробуйте снова.');
+    return handleApiError(error, 'Не удалось создать пост. Попробуйте снова.');
   }
 };
 
@@ -44,7 +45,7 @@ export const likePostById = async (postId, userId) => {
     return response.data;
   } catch (error) {
     console.error('Ошибка при лайке поста:', error);
-    throw new Error(error.response?.data?.message || 'Не удалось поставить лайк. Попробуйте снова.');
+    return handleApiError(error, 'Не удалось поставить лайк. Попробуйте снова.');
   }
 };
 
@@ -61,6 +62,6 @@ export const commentOnPost = async (postId, content, userId) => {
     return response.data;
   } catch (error) {
     console.error('Ошибка при комментировании поста:', error);
-    throw new Error(error.response?.data?.message || 'Не удалось оставить комментарий. Попробуйте снова.');
+    return handleApiError(error, 'Не удалось оставить комментарий. Попробуйте снова.');
   }
 };

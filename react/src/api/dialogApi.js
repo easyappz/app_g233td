@@ -1,4 +1,5 @@
 import { instance } from './axios';
+import { handleApiError } from '../utils/errorHandler';
 
 /**
  * Fetch user dialogs
@@ -11,7 +12,7 @@ export const getDialogs = async (userId) => {
     return response.data;
   } catch (error) {
     console.error('Ошибка при получении диалогов:', error);
-    throw new Error(error.response?.data?.message || 'Не удалось загрузить диалоги. Попробуйте снова.');
+    return handleApiError(error, 'Не удалось загрузить диалоги. Попробуйте снова.');
   }
 };
 
@@ -26,7 +27,7 @@ export const getMessages = async (dialogId) => {
     return response.data;
   } catch (error) {
     console.error('Ошибка при получении сообщений:', error);
-    throw new Error(error.response?.data?.message || 'Не удалось загрузить сообщения. Попробуйте снова.');
+    return handleApiError(error, 'Не удалось загрузить сообщения. Попробуйте снова.');
   }
 };
 
@@ -44,7 +45,7 @@ export const sendMessage = async (userId, targetUserId, data) => {
     return response.data;
   } catch (error) {
     console.error('Ошибка при отправке сообщения:', error);
-    throw new Error(error.response?.data?.message || 'Не удалось отправить сообщение. Попробуйте снова.');
+    return handleApiError(error, 'Не удалось отправить сообщение. Попробуйте снова.');
   }
 };
 
@@ -60,6 +61,6 @@ export const markMessagesAsRead = async (dialogId, userId) => {
     return response.data;
   } catch (error) {
     console.error('Ошибка при отметке сообщений как прочитанных:', error);
-    throw new Error(error.response?.data?.message || 'Не удалось отметить сообщения как прочитанные.');
+    return handleApiError(error, 'Не удалось отметить сообщения как прочитанные.');
   }
 };
