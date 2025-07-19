@@ -1,43 +1,42 @@
-const UserProfile = require('../models/UserProfile');
+const User = require('../models/User');
 
-// Get user profile data
+// Get user profile
 exports.getProfile = async (req, res) => {
   try {
     const userId = req.params.userId;
-    const profile = await UserProfile.findOne({ userId });
+    const user = await User.findById(userId).select('-password');
     
-    if (!profile) {
-      return res.status(404).json({ message: 'Profile not found' });
+    if (!user) {
+      return res.status(404).json({ message: 'Пользователь не найден' });
     }
     
-    res.status(200).json(profile);
+    res.status(200).json(user);
   } catch (error) {
-    console.error('Error fetching profile:', error);
-    res.status(500).json({ message: 'Server error while fetching profile' });
+    console.error('Ошибка при получении профиля:', error);
+    res.status(500).json({ message: 'Ошибка сервера' });
   }
 };
 
-// Update user profile information
+// Update user profile
 exports.updateProfile = async (req, res) => {
   try {
     const userId = req.params.userId;
-    const { name, avatar, description } = req.body;
+    const { name, bio, city } = req.body;
     
-    const updateData = {};
-    if (name !== undefined) updateData.name = name;
-    if (avatar !== undefined) updateData.avatar = avatar;
-    if (description !== undefined) updateData.description = description;
-    
-    const profile = await UserProfile.findOneAndUpdate(
-      { userId },
-      { $set: updateData },
-      { new: true, upsert: true }
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { name, bio, city },
+      { new: true, select: '-password' }
     );
     
-    res.status(200).json(profile);
+    if (!updatedUser) {
+      return res.status(404).json({ message: 'Пользователь не найден' });
+    }
+    
+    res.status(200).json(updatedUser);
   } catch (error) {
-    console.error('Error updating profile:', error);
-    res.status(500).json({ message: 'Server error while updating profile' });
+    console.error('Ошибка при обновлении профиля:', error);
+    res.status(500).json({ message: 'Ошибка сервера' });
   }
 };
 
@@ -45,15 +44,27 @@ exports.updateProfile = async (req, res) => {
 exports.deleteProfile = async (req, res) => {
   try {
     const userId = req.params.userId;
-    const profile = await UserProfile.findOneAndDelete({ userId });
+    const deletedUser = await User.findByIdAndDelete(userId);
     
-    if (!profile) {
-      return res.status(404).json({ message: 'Profile not found' });
+    if (!deletedUser) {
+      return res.status(404).json({ message: 'Пользователь не найден' });
     }
     
-    res.status(200).json({ message: 'Profile deleted successfully' });
+    res.status(200).json({ message: 'Профиль удален' });
   } catch (error) {
-    console.error('Error deleting profile:', error);
-    res.status(500).json({ message: 'Server error while deleting profile' });
+    console.error('Ошибка при удалении профиля:', error);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+};
+
+// Upload avatar (placeholder for future implementation)
+exports.uploadAvatar = async (req, res) => {
+  try {
+    // This is a placeholder. Actual file upload logic will depend on storage solution.
+    const userId = req.params.userId;
+    res.status(200).json({ message: 'Аватар загружен (заглушка)', avatarUrl: '/placeholder-avatar.jpg' });
+  } catch (error) {
+    console.error('Ошибка при загрузке аватара:', error);
+    res.status(500).json({ message: 'Ошибка сервера' });
   }
 };

@@ -23,6 +23,7 @@ router.get('/users/search', protect, userController.searchUsers);
 router.get('/profiles/:userId', protect, profileController.getProfile);
 router.put('/profiles/:userId', protect, profileController.updateProfile);
 router.delete('/profiles/:userId', protect, profileController.deleteProfile);
+router.post('/profiles/:userId/avatar', protect, profileController.uploadAvatar);
 
 // Post Routes
 router.post('/posts/:userId', protect, postController.createPost);
