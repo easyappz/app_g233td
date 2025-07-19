@@ -1,8 +1,12 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const apiRoutes = require('./apiRoutes');
+const { connectToMongoDB } = require('./db');
 
 const app = express();
+
+// Connect to MongoDB
+connectToMongoDB();
 
 // Middleware
 app.use(bodyParser.json());

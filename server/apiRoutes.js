@@ -3,6 +3,7 @@ const authController = require('./controllers/authController');
 const userController = require('./controllers/userController');
 const postController = require('./controllers/postController');
 const messageController = require('./controllers/messageController');
+const profileController = require('./controllers/profileController');
 const { protect } = require('./middleware/authMiddleware');
 
 const router = express.Router();
@@ -17,6 +18,11 @@ router.put('/users/:userId', protect, userController.updateProfile);
 router.post('/users/:userId/follow/:targetUserId', protect, userController.followUser);
 router.post('/users/:userId/unfollow/:targetUserId', protect, userController.unfollowUser);
 router.get('/users/search', protect, userController.searchUsers);
+
+// Profile Routes
+router.get('/profiles/:userId', protect, profileController.getProfile);
+router.put('/profiles/:userId', protect, profileController.updateProfile);
+router.delete('/profiles/:userId', protect, profileController.deleteProfile);
 
 // Post Routes
 router.post('/posts/:userId', protect, postController.createPost);
