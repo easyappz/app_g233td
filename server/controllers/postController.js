@@ -1,228 +1,165 @@
 const Post = require('../models/Post');
+const User = require('../models/User');
 
 // Create a new post
 exports.createPost = async (req, res) => {
   try {
-    const { userId } = req.params;
     const { content } = req.body;
-
     if (!content) {
-      return res.status(400).json({ error: 'Content is required' });
+      return res.status(400).json({ message: 'Content is required' });
     }
 
-    const newPost = new Post({
-      userId,
+    const post = new Post({
       content,
+      author: req.params.userId,
     });
 
-    const savedPost = await newPost.save();
-    return res.status(201).json(savedPost);
+    await post.save();
+    res.status(201).json(post);
   } catch (error) {
-    console.error('Error creating post:', error);
-    return res.status(500).json({ error: 'Failed to create post' });
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
-// Get posts by user
+// Get user's posts
 exports.getUserPosts = async (req, res) => {
   try {
-    const { userId } = req.params;
-    const { page = 1, limit = 10 } = req.query;
-
-    const pageNumber = parseInt(page, 10);
-    const limitNumber = parseInt(limit, 10);
-
-    if (pageNumber < 1 || limitNumber < 1) {
-      return res.status(400).json({ error: 'Invalid pagination parameters' });
-    }
-
-    const posts = await Post.find({ userId })
-      .sort({ createdAt: -1 })
-      .skip((pageNumber - 1) * limitNumber)
-      .limit(limitNumber)
-      .populate('userId', 'username')
-      .populate('likes', 'username')
-      .populate('comments.userId', 'username');
-
-    const totalPosts = await Post.countDocuments({ userId });
-
-    return res.status(200).json({
-      posts,
-      total: totalPosts,
-      page: pageNumber,
-      limit: limitNumber,
-      totalPages: Math.ceil(totalPosts / limitNumber),
-    });
+    const posts = await Post.find({ author: req.params.userId })
+      .populate('author', 'name username avatar')
+      .sort({ createdAt: -1 });
+    res.json(posts);
   } catch (error) {
-    console.error('Error fetching user posts:', error);
-    return res.status(500).json({ error: 'Failed to fetch posts' });
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
-// Get feed (posts from followed users or all posts)
+// Get feed (posts from followed users)
 exports.getFeed = async (req, res) => {
   try {
-    const { userId } = req.params;
-    const { page = 1, limit = 10 } = req.query;
+    const user = await User.findById(req.params.userId);
+    const following = user.following;
+    following.push(req.params.userId); // Include user's own posts
 
-    const pageNumber = parseInt(page, 10);
-    const limitNumber = parseInt(limit, 10);
+    const posts = await Post.find({ author: { $in: following } })
+      .populate('author', 'name username avatar')
+      .sort({ createdAt: -1 });
 
-    if (pageNumber < 1 || limitNumber < 1) {
-      return res.status(400).json({ error: 'Invalid pagination parameters' });
-    }
-
-    // For simplicity, returning all posts as feed (can be modified to filter by followed users)
-    const posts = await Post.find()
-      .sort({ createdAt: -1 })
-      .skip((pageNumber - 1) * limitNumber)
-      .limit(limitNumber)
-      .populate('userId', 'username')
-      .populate('likes', 'username')
-      .populate('comments.userId', 'username');
-
-    const totalPosts = await Post.countDocuments();
-
-    return res.status(200).json({
-      posts,
-      total: totalPosts,
-      page: pageNumber,
-      limit: limitNumber,
-      totalPages: Math.ceil(totalPosts / limitNumber),
-    });
+    res.json(posts);
   } catch (error) {
-    console.error('Error fetching feed:', error);
-    return res.status(500).json({ error: 'Failed to fetch feed' });
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
 // Like a post
 exports.likePost = async (req, res) => {
   try {
-    const { postId, userId } = req.params;
-
-    const post = await Post.findById(postId);
+    const post = await Post.findById(req.params.postId);
     if (!post) {
-      return res.status(404).json({ error: 'Post not found' });
+      return res.status(404).json({ message: 'Post not found' });
     }
 
-    if (post.likes.includes(userId)) {
-      return res.status(400).json({ error: 'Post already liked' });
+    if (!post.likes.includes(req.params.userId)) {
+      post.likes.push(req.params.userId);
+      await post.save();
     }
 
-    post.likes.push(userId);
-    await post.save();
-
-    return res.status(200).json({ message: 'Post liked successfully', likes: post.likes });
+    res.json({ message: 'Post liked' });
   } catch (error) {
-    console.error('Error liking post:', error);
-    return res.status(500).json({ error: 'Failed to like post' });
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
 // Unlike a post
 exports.unlikePost = async (req, res) => {
   try {
-    const { postId, userId } = req.params;
-
-    const post = await Post.findById(postId);
+    const post = await Post.findById(req.params.postId);
     if (!post) {
-      return res.status(404).json({ error: 'Post not found' });
+      return res.status(404).json({ message: 'Post not found' });
     }
 
-    const index = post.likes.indexOf(userId);
-    if (index === -1) {
-      return res.status(400).json({ error: 'Post not liked yet' });
-    }
-
-    post.likes.splice(index, 1);
+    post.likes = post.likes.filter(id => id.toString() !== req.params.userId);
     await post.save();
 
-    return res.status(200).json({ message: 'Post unliked successfully', likes: post.likes });
+    res.json({ message: 'Post unliked' });
   } catch (error) {
-    console.error('Error unliking post:', error);
-    return res.status(500).json({ error: 'Failed to unlike post' });
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
 // Comment on a post
 exports.commentOnPost = async (req, res) => {
   try {
-    const { postId, userId } = req.params;
     const { content } = req.body;
-
     if (!content) {
-      return res.status(400).json({ error: 'Comment content is required' });
+      return res.status(400).json({ message: 'Comment content is required' });
     }
 
-    const post = await Post.findById(postId);
+    const post = await Post.findById(req.params.postId);
     if (!post) {
-      return res.status(404).json({ error: 'Post not found' });
+      return res.status(404).json({ message: 'Post not found' });
     }
 
     post.comments.push({
-      userId,
       content,
+      author: req.params.userId,
     });
     await post.save();
 
-    return res.status(200).json({ message: 'Comment added successfully', comments: post.comments });
+    res.json({ message: 'Comment added', post });
   } catch (error) {
-    console.error('Error commenting on post:', error);
-    return res.status(500).json({ error: 'Failed to comment on post' });
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
 // Edit a post
 exports.editPost = async (req, res) => {
   try {
-    const { postId } = req.params;
     const { content } = req.body;
-
     if (!content) {
-      return res.status(400).json({ error: 'Content is required' });
+      return res.status(400).json({ message: 'Content is required' });
     }
 
-    const post = await Post.findById(postId);
+    const post = await Post.findById(req.params.postId);
     if (!post) {
-      return res.status(404).json({ error: 'Post not found' });
+      return res.status(404).json({ message: 'Post not found' });
     }
 
-    // Check if the user owns the post (this assumes req.user is set by protect middleware)
-    if (post.userId.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ error: 'Unauthorized to edit this post' });
+    if (post.author.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Not authorized to edit this post' });
     }
 
     post.content = content;
     await post.save();
 
-    return res.status(200).json({ message: 'Post updated successfully', post });
+    res.json(post);
   } catch (error) {
-    console.error('Error editing post:', error);
-    return res.status(500).json({ error: 'Failed to edit post' });
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
 // Delete a post
 exports.deletePost = async (req, res) => {
   try {
-    const { postId } = req.params;
-
-    const post = await Post.findById(postId);
+    const post = await Post.findById(req.params.postId);
     if (!post) {
-      return res.status(404).json({ error: 'Post not found' });
+      return res.status(404).json({ message: 'Post not found' });
     }
 
-    // Check if the user owns the post (this assumes req.user is set by protect middleware)
-    if (post.userId.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ error: 'Unauthorized to delete this post' });
+    if (post.author.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Not authorized to delete this post' });
     }
 
-    await Post.deleteOne({ _id: postId });
-
-    return res.status(200).json({ message: 'Post deleted successfully' });
+    await post.remove();
+    res.json({ message: 'Post deleted' });
   } catch (error) {
-    console.error('Error deleting post:', error);
-    return res.status(500).json({ error: 'Failed to delete post' });
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
   }
 };

@@ -3,68 +3,88 @@ const User = require('../models/User');
 // Get user profile
 exports.getProfile = async (req, res) => {
   try {
-    const userId = req.params.userId;
-    const user = await User.findById(userId).select('-password');
-    
+    const user = await User.findById(req.params.userId)
+      .select('-password')
+      .populate('followers', 'name username avatar')
+      .populate('following', 'name username avatar');
     if (!user) {
-      return res.status(404).json({ message: 'Пользователь не найден' });
+      return res.status(404).json({ message: 'User not found' });
     }
-    
-    res.status(200).json(user);
+    res.json(user);
   } catch (error) {
-    console.error('Ошибка при получении профиля:', error);
-    res.status(500).json({ message: 'Ошибка сервера' });
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
 // Update user profile
 exports.updateProfile = async (req, res) => {
   try {
-    const userId = req.params.userId;
-    const { name, bio, city } = req.body;
-    
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      { name, bio, city },
-      { new: true, select: '-password' }
-    );
-    
-    if (!updatedUser) {
-      return res.status(404).json({ message: 'Пользователь не найден' });
+    const { name, bio } = req.body;
+    const user = await User.findById(req.params.userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
-    
-    res.status(200).json(updatedUser);
+
+    if (user._id.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Not authorized to update this profile' });
+    }
+
+    if (name) user.name = name;
+    if (bio) user.bio = bio;
+
+    await user.save();
+    res.json(user);
   } catch (error) {
-    console.error('Ошибка при обновлении профиля:', error);
-    res.status(500).json({ message: 'Ошибка сервера' });
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
 // Delete user profile
 exports.deleteProfile = async (req, res) => {
   try {
-    const userId = req.params.userId;
-    const deletedUser = await User.findByIdAndDelete(userId);
-    
-    if (!deletedUser) {
-      return res.status(404).json({ message: 'Пользователь не найден' });
+    const user = await User.findById(req.params.userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
-    
-    res.status(200).json({ message: 'Профиль удален' });
+
+    if (user._id.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Not authorized to delete this profile' });
+    }
+
+    await user.remove();
+    res.json({ message: 'Profile deleted' });
   } catch (error) {
-    console.error('Ошибка при удалении профиля:', error);
-    res.status(500).json({ message: 'Ошибка сервера' });
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
-// Upload avatar (placeholder for future implementation)
+// Upload avatar
 exports.uploadAvatar = async (req, res) => {
   try {
-    // This is a placeholder. Actual file upload logic will depend on storage solution.
-    const userId = req.params.userId;
-    res.status(200).json({ message: 'Аватар загружен (заглушка)', avatarUrl: '/placeholder-avatar.jpg' });
+    const user = await User.findById(req.params.userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user._id.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Not authorized to update this profile' });
+    }
+
+    if (req.body.avatarUrl) {
+      user.avatar = req.body.avatarUrl;
+      await user.save();
+      res.json({ message: 'Avatar updated', avatar: user.avatar });
+    } else {
+      res.status(400).json({ message: 'No avatar URL provided' });
+    }
   } catch (error) {
-    console.error('Ошибка при загрузке аватара:', error);
-    res.status(500).json({ message: 'Ошибка сервера' });
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
   }
 };

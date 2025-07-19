@@ -11,7 +11,6 @@ const dialogSchema = new mongoose.Schema({
   lastMessage: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Message',
-    default: null,
   },
   createdAt: {
     type: Date,
@@ -23,11 +22,4 @@ const dialogSchema = new mongoose.Schema({
   },
 });
 
-// Update the updatedAt timestamp before saving
-dialogSchema.pre('save', function (next) {
-  this.updatedAt = Date.now();
-  next();
-});
-
-const Dialog = mongoose.model('Dialog', dialogSchema);
-module.exports = Dialog;
+module.exports = mongoose.model('Dialog', dialogSchema);

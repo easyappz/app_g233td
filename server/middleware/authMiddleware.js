@@ -1,19 +1,21 @@
-const { verifyToken } = require('../utils/jwt');
+const jwt = require('jsonwebtoken');
 
-// Middleware to protect routes
-exports.protect = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Unauthorized: No token provided' });
+const protect = (req, res, next) => {
+  let token;
+
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    try {
+      token = req.headers.authorization.split(' ')[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'mysecretkey');
+      req.user = decoded;
+      next();
+    } catch (error) {
+      console.error(error);
+      res.status(401).json({ message: 'Not authorized, token failed' });
+    }
+  } else {
+    res.status(401).json({ message: 'Not authorized, no token' });
   }
-
-  const token = authHeader.split(' ')[1];
-  const decoded = verifyToken(token);
-
-  if (!decoded) {
-    return res.status(401).json({ error: 'Unauthorized: Invalid token' });
-  }
-
-  req.user = { userId: decoded.userId, username: decoded.username };
-  next();
 };
+
+module.exports = { protect };

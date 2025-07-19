@@ -1,14 +1,14 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
-const authRoutes = require('./routes/auth');
+const apiRoutes = require('./apiRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost/social_network';
 
 app.use(bodyParser.json());
-app.use('/api/auth', authRoutes);
+app.use('/api', apiRoutes);
 
 mongoose.connect(MONGO_URI, {
   useNewUrlParser: true,
