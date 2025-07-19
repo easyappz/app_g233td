@@ -8,8 +8,13 @@ import { instance } from './axios';
  * @returns {Promise<Object>} - The response from the server
  */
 export const startDialog = async (senderId, targetUserId, content) => {
-  const response = await instance.post(`/api/messages/send/${senderId}/${targetUserId}`, { content });
-  return response.data;
+  try {
+    const response = await instance.post(`/messages/${senderId}/to/${targetUserId}`, { content });
+    return response.data;
+  } catch (error) {
+    console.error('Ошибка при отправке сообщения:', error);
+    throw new Error(error.response?.data?.message || 'Не удалось отправить сообщение. Попробуйте снова.');
+  }
 };
 
 /**
@@ -18,8 +23,13 @@ export const startDialog = async (senderId, targetUserId, content) => {
  * @returns {Promise<Array>} - Array of dialogs
  */
 export const getDialogs = async (userId) => {
-  const response = await instance.get(`/api/messages/dialogs/${userId}`);
-  return response.data;
+  try {
+    const response = await instance.get(`/dialogs/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Ошибка при получении диалогов:', error);
+    throw new Error(error.response?.data?.message || 'Не удалось загрузить диалоги. Попробуйте снова.');
+  }
 };
 
 /**
@@ -28,8 +38,13 @@ export const getDialogs = async (userId) => {
  * @returns {Promise<Array>} - Array of messages
  */
 export const getMessages = async (dialogId) => {
-  const response = await instance.get(`/api/messages/${dialogId}`);
-  return response.data;
+  try {
+    const response = await instance.get(`/messages/${dialogId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Ошибка при получении сообщений:', error);
+    throw new Error(error.response?.data?.message || 'Не удалось загрузить сообщения. Попробуйте снова.');
+  }
 };
 
 /**
@@ -39,6 +54,11 @@ export const getMessages = async (dialogId) => {
  * @returns {Promise<Object>} - The response from the server
  */
 export const markMessagesAsRead = async (dialogId, userId) => {
-  const response = await instance.post(`/api/messages/read/${dialogId}/${userId}`);
-  return response.data;
+  try {
+    const response = await instance.post(`/messages/${dialogId}/read/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Ошибка при отметке сообщений как прочитанных:', error);
+    throw new Error(error.response?.data?.message || 'Не удалось отметить сообщения как прочитанные.');
+  }
 };

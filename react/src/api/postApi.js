@@ -1,21 +1,66 @@
 import { instance } from './axios';
 
+/**
+ * Fetch feed posts
+ * @param {number} page - Page number
+ * @param {number} limit - Number of posts per page
+ * @returns {Promise<Object[]>} List of posts
+ */
 export const getFeedPosts = async (page = 1, limit = 10) => {
-  const response = await instance.get(`/api/posts/feed?page=${page}&limit=${limit}`);
-  return response.data;
+  try {
+    const response = await instance.get(`/posts/feed/${page}?limit=${limit}`);
+    return response.data;
+  } catch (error) {
+    console.error('Ошибка при получении ленты новостей:', error);
+    throw new Error(error.response?.data?.message || 'Не удалось загрузить ленту новостей. Попробуйте снова.');
+  }
 };
 
-export const createNewPost = async (content) => {
-  const response = await instance.post('/api/posts', { content });
-  return response.data;
+/**
+ * Create a new post
+ * @param {string} content - Post content
+ * @param {string} userId - User ID
+ * @returns {Promise<Object>} Created post
+ */
+export const createNewPost = async (content, userId) => {
+  try {
+    const response = await instance.post(`/posts/${userId}`, { content });
+    return response.data;
+  } catch (error) {
+    console.error('Ошибка при создании поста:', error);
+    throw new Error(error.response?.data?.message || 'Не удалось создать пост. Попробуйте снова.');
+  }
 };
 
-export const likePostById = async (postId) => {
-  const response = await instance.post(`/api/posts/${postId}/like`);
-  return response.data;
+/**
+ * Like a post
+ * @param {string} postId - Post ID
+ * @param {string} userId - User ID
+ * @returns {Promise<Object>} Response
+ */
+export const likePostById = async (postId, userId) => {
+  try {
+    const response = await instance.post(`/posts/${postId}/like/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Ошибка при лайке поста:', error);
+    throw new Error(error.response?.data?.message || 'Не удалось поставить лайк. Попробуйте снова.');
+  }
 };
 
-export const commentOnPost = async (postId, content) => {
-  const response = await instance.post(`/api/posts/${postId}/comment`, { content });
-  return response.data;
+/**
+ * Comment on a post
+ * @param {string} postId - Post ID
+ * @param {string} content - Comment content
+ * @param {string} userId - User ID
+ * @returns {Promise<Object>} Response
+ */
+export const commentOnPost = async (postId, content, userId) => {
+  try {
+    const response = await instance.post(`/posts/${postId}/comment/${userId}`, { content });
+    return response.data;
+  } catch (error) {
+    console.error('Ошибка при комментировании поста:', error);
+    throw new Error(error.response?.data?.message || 'Не удалось оставить комментарий. Попробуйте снова.');
+  }
 };
