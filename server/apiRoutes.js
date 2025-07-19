@@ -53,4 +53,9 @@ router.get('/status', (req, res) => {
   });
 });
 
+// Global Error Handler for Unhandled Routes
+router.use('*', (req, res) => {
+  res.status(404).json({ message: 'Route not found' });
+});
+
 module.exports = router;
