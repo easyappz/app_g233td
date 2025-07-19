@@ -1,12 +1,12 @@
 const mongoose = require('mongoose');
 
-const MessageSchema = new mongoose.Schema({
-  dialogId: {
+const messageSchema = new mongoose.Schema({
+  dialog: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Dialog',
     required: true,
   },
-  senderId: {
+  sender: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
@@ -14,15 +14,19 @@ const MessageSchema = new mongoose.Schema({
   content: {
     type: String,
     required: true,
+    trim: true,
   },
-  read: {
-    type: Boolean,
-    default: false,
-  },
+  readBy: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+  ],
   createdAt: {
     type: Date,
     default: Date.now,
   },
 });
 
-module.exports = mongoose.model('Message', MessageSchema);
+const Message = mongoose.model('Message', messageSchema);
+module.exports = Message;

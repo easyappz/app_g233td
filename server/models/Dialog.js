@@ -1,14 +1,17 @@
 const mongoose = require('mongoose');
 
-const DialogSchema = new mongoose.Schema({
-  participants: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true,
-  }],
+const dialogSchema = new mongoose.Schema({
+  participants: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
+  ],
   lastMessage: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Message',
+    default: null,
   },
   createdAt: {
     type: Date,
@@ -20,9 +23,11 @@ const DialogSchema = new mongoose.Schema({
   },
 });
 
-DialogSchema.pre('save', function(next) {
+// Update the updatedAt timestamp before saving
+dialogSchema.pre('save', function (next) {
   this.updatedAt = Date.now();
   next();
 });
 
-module.exports = mongoose.model('Dialog', DialogSchema);
+const Dialog = mongoose.model('Dialog', dialogSchema);
+module.exports = Dialog;

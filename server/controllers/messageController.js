@@ -1,82 +1,125 @@
 const Dialog = require('../models/Dialog');
 const Message = require('../models/Message');
 
-// Get dialogs for a user
-exports.getDialogs = async (req, res) => {
+// Get all dialogs for a user
+exports.getDialogs = async (req, res, next) => {
   try {
-    const { userId } = req.params;
+    const userId = req.params.userId;
     const dialogs = await Dialog.find({ participants: userId })
-      .populate('participants', 'username fullName profilePicture')
+      .populate('participants', 'username email')
       .populate('lastMessage')
       .sort({ updatedAt: -1 });
 
-    res.status(200).json(dialogs);
+    res.status(200).json({
+      success: true,
+      data: dialogs,
+    });
   } catch (error) {
-    console.error('Error fetching dialogs:', error);
-    res.status(500).json({ error: 'Failed to fetch dialogs' });
+    next(error);
   }
 };
 
-// Get messages in a dialog
-exports.getMessages = async (req, res) => {
+// Get messages in a specific dialog
+exports.getMessages = async (req, res, next) => {
   try {
-    const { dialogId } = req.params;
-    const messages = await Message.find({ dialogId })
-      .populate('senderId', 'username profilePicture')
-      .sort({ createdAt: 1 });
+    const dialogId = req.params.dialogId;
+    const userId = req.user.id;
 
-    res.status(200).json(messages);
-  } catch (error) {
-    console.error('Error fetching messages:', error);
-    res.status(500).json({ error: 'Failed to fetch messages' });
-  }
-};
-
-// Send a message
-exports.sendMessage = async (req, res) => {
-  try {
-    const { userId, targetUserId } = req.params;
-    const { content } = req.body;
-
-    // Find or create a dialog
-    let dialog = await Dialog.findOne({ participants: { $all: [userId, targetUserId] } });
-    if (!dialog) {
-      dialog = new Dialog({ participants: [userId, targetUserId] });
-      await dialog.save();
+    const dialog = await Dialog.findById(dialogId);
+    if (!dialog || !dialog.participants.includes(userId)) {
+      return res.status(403).json({
+        success: false,
+        error: 'Access denied to this dialog',
+      });
     }
 
-    // Create a new message
-    const newMessage = new Message({
-      dialogId: dialog._id,
-      senderId: userId,
-      content,
+    const messages = await Message.find({ dialog: dialogId })
+      .populate('sender', 'username email')
+      .sort({ createdAt: 1 });
+
+    res.status(200).json({
+      success: true,
+      data: messages,
     });
-    await newMessage.save();
-
-    // Update dialog's last message
-    dialog.lastMessage = newMessage._id;
-    await dialog.save();
-
-    res.status(201).json({ message: 'Message sent successfully', message: newMessage });
   } catch (error) {
-    console.error('Error sending message:', error);
-    res.status(500).json({ error: 'Failed to send message' });
+    next(error);
   }
 };
 
-// Mark messages as read
-exports.markMessagesAsRead = async (req, res) => {
+// Send a message to another user
+exports.sendMessage = async (req, res, next) => {
   try {
-    const { dialogId, userId } = req.params;
+    const senderId = req.params.userId;
+    const targetUserId = req.params.targetUserId;
+    const { content } = req.body;
+
+    if (!content) {
+      return res.status(400).json({
+        success: false,
+        error: 'Message content is required',
+      });
+    }
+
+    // Check if dialog exists between these users
+    let dialog = await Dialog.findOne({
+      participants: { $all: [senderId, targetUserId] },
+    });
+
+    // If no dialog exists, create a new one
+    if (!dialog) {
+      dialog = await Dialog.create({
+        participants: [senderId, targetUserId],
+      });
+    }
+
+    // Create the message
+    const message = await Message.create({
+      dialog: dialog._id,
+      sender: senderId,
+      content,
+      readBy: [senderId],
+    });
+
+    // Update the dialog's last message and timestamp
+    dialog.lastMessage = message._id;
+    await dialog.save();
+
+    // Populate sender details for response
+    await message.populate('sender', 'username email');
+
+    res.status(201).json({
+      success: true,
+      data: message,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Mark messages as read in a dialog
+exports.markMessagesAsRead = async (req, res, next) => {
+  try {
+    const dialogId = req.params.dialogId;
+    const userId = req.params.userId;
+
+    const dialog = await Dialog.findById(dialogId);
+    if (!dialog || !dialog.participants.includes(userId)) {
+      return res.status(403).json({
+        success: false,
+        error: 'Access denied to this dialog',
+      });
+    }
 
     await Message.updateMany(
-      { dialogId, senderId: { $ne: userId }, read: false },
-      { read: true }
+      { dialog: dialogId, readBy: { $ne: userId } },
+      { $push: { readBy: userId } }
     );
 
-    res.status(200).json({ message: 'Messages marked as read' });
+    res.status(200).json({
+      success: true,
+      message: 'Messages marked as read',
+    });
   } catch (error) {
-    console.error('Error marking messages as read:', error);
-    res.status(500).json({ error: 'Failed to mark messages as read' });
+    next(error);
   }
 };
