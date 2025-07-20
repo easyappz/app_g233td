@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, TextField, Button, Typography, Container, Paper, Alert, Link } from '@mui/material';
+import { Box, TextField, Button, Typography, Container, Paper, Alert, Link, Snackbar } from '@mui/material';
 import { instance } from '../api/axios';
 
 function RegisterPage() {
@@ -12,6 +12,11 @@ function RegisterPage() {
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -35,16 +40,31 @@ function RegisterPage() {
         password: formData.password,
       });
       setSuccess(true);
+      setSnackbar({
+        open: true,
+        message: 'Регистрация успешна! Вы будете перенаправлены на страницу входа.',
+        severity: 'success',
+      });
       setTimeout(() => {
         navigate('/login');
-      }, 2000);
+      }, 3000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Ошибка при регистрации');
+      const errorMessage = err.response?.data?.message || 'Ошибка при регистрации';
+      setError(errorMessage);
+      setSnackbar({
+        open: true,
+        message: errorMessage,
+        severity: 'error',
+      });
     }
   };
 
   const handleNavigateToLogin = () => {
     navigate('/login');
+  };
+
+  const handleSnackbarClose = () => {
+    setSnackbar((prev) => ({ ...prev, open: false }));
   };
 
   return (
@@ -53,8 +73,10 @@ function RegisterPage() {
         <Typography variant="h5" gutterBottom sx={{ color: '#1877F2' }}>
           Регистрация
         </Typography>
-        {error && <Alert severity="error" sx={{ width: '100%', mb: 2 }}>{error}</Alert>}
-        {success ? (
+        {error && !snackbar.open && (
+          <Alert severity="error" sx={{ width: '100%', mb: 2 }}>{error}</Alert>
+        )}
+        {success && !snackbar.open ? (
           <Alert severity="success" sx={{ width: '100%', mb: 2 }}>
             Регистрация успешна! Теперь вы можете войти.
           </Alert>
@@ -114,6 +136,16 @@ function RegisterPage() {
           </Box>
         )}
       </Paper>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }
