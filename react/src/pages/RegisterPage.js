@@ -29,8 +29,24 @@ function RegisterPage() {
     e.preventDefault();
     setError('');
 
+    // Client-side validation for empty fields
+    if (!formData.name || !formData.username || !formData.email || !formData.password || !formData.confirmPassword) {
+      setError('Все поля обязательны для заполнения');
+      setSnackbar({
+        open: true,
+        message: 'Все поля обязательны для заполнения',
+        severity: 'error',
+      });
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setError('Пароли не совпадают');
+      setSnackbar({
+        open: true,
+        message: 'Пароли не совпадают',
+        severity: 'error',
+      });
       return;
     }
 
@@ -51,7 +67,18 @@ function RegisterPage() {
         navigate('/login');
       }, 3000);
     } catch (err) {
-      const errorMessage = err.response?.data?.message || 'Ошибка при регистрации';
+      let errorMessage = 'Ошибка при регистрации';
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+        // Specific error messages based on server response
+        if (errorMessage.includes('email')) {
+          errorMessage = 'Этот email уже зарегистрирован';
+        } else if (errorMessage.includes('username')) {
+          errorMessage = 'Это имя пользователя уже занято';
+        } else if (errorMessage.includes('required')) {
+          errorMessage = 'Все поля обязательны для заполнения';
+        }
+      }
       setError(errorMessage);
       setSnackbar({
         open: true,
@@ -150,11 +177,12 @@ function RegisterPage() {
       </Paper>
       <Snackbar
         open={snackbar.open}
-        autoHideDuration={3000}
+        autoHideDuration={5000}
         onClose={handleSnackbarClose}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        sx={{ '& .MuiSnackbarContent-root': { backgroundColor: '#ffffff', color: '#1d2129', boxShadow: 1 } }}
       >
-        <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: '100%' }}>
+        <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: '100%', backgroundColor: '#ffffff', color: '#1d2129', borderLeft: `4px solid ${snackbar.severity === 'success' ? '#2ecc71' : '#e74c3c'}`, '& .MuiAlert-icon': { color: snackbar.severity === 'success' ? '#2ecc71' : '#e74c3c' } }}>
           {snackbar.message}
         </Alert>
       </Snackbar>
