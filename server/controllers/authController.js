@@ -8,14 +8,27 @@ exports.register = async (req, res) => {
     const { name, username, email, password } = req.body;
 
     // Check if all required fields are provided
-    if (!name || !username || !email || !password) {
-      return res.status(400).json({ message: 'All fields are required' });
+    if (!name) {
+      return res.status(400).json({ message: 'Name is required' });
+    }
+    if (!username) {
+      return res.status(400).json({ message: 'Username is required' });
+    }
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+    if (!password) {
+      return res.status(400).json({ message: 'Password is required' });
     }
 
     // Check if user already exists with the provided email or username
-    const existingUser = await User.findOne({ $or: [{ email }, { username }] });
-    if (existingUser) {
-      return res.status(400).json({ message: 'Email or username already exists' });
+    const existingUserByEmail = await User.findOne({ email });
+    if (existingUserByEmail) {
+      return res.status(400).json({ message: 'Email already exists' });
+    }
+    const existingUserByUsername = await User.findOne({ username });
+    if (existingUserByUsername) {
+      return res.status(400).json({ message: 'Username already exists' });
     }
 
     // Hash the password before saving
@@ -40,10 +53,10 @@ exports.register = async (req, res) => {
         name: user.name,
         username: user.username,
         email: user.email,
-        avatar: user.avatar,
-        bio: user.bio,
-        followers: user.followers,
-        following: user.following,
+        avatar: user.avatar || '',
+        bio: user.bio || '',
+        followers: user.followers || [],
+        following: user.following || [],
         createdAt: user.createdAt
       },
       token,
@@ -60,20 +73,23 @@ exports.login = async (req, res) => {
     const { email, password } = req.body;
 
     // Check if email and password are provided
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required' });
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+    if (!password) {
+      return res.status(400).json({ message: 'Password is required' });
     }
 
     // Find user by email
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+      return res.status(400).json({ message: 'Invalid email or password' });
     }
 
     // Compare provided password with stored hashed password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+      return res.status(400).json({ message: 'Invalid email or password' });
     }
 
     // Generate a JWT token for the user
@@ -86,10 +102,10 @@ exports.login = async (req, res) => {
         name: user.name,
         username: user.username,
         email: user.email,
-        avatar: user.avatar,
-        bio: user.bio,
-        followers: user.followers,
-        following: user.following,
+        avatar: user.avatar || '',
+        bio: user.bio || '',
+        followers: user.followers || [],
+        following: user.following || [],
         createdAt: user.createdAt
       },
       token,
