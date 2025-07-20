@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, TextField, Button, Typography, Container, Paper, Alert, Link } from '@mui/material';
 import { instance } from '../api/axios';
+import { useAuth } from '../context/AuthContext';
 
 function LoginPage() {
   const [formData, setFormData] = useState({
@@ -11,6 +12,7 @@ function LoginPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -22,14 +24,17 @@ function LoginPage() {
     setError('');
 
     try {
-      await instance.post('/api/auth/login', {
+      const response = await instance.post('/api/auth/login', {
         email: formData.email,
         password: formData.password,
       });
-      setSuccess(true);
-      setTimeout(() => {
-        navigate('/');
-      }, 2000);
+      
+      if (response.data.token && response.data.user) {
+        login(response.data.user, response.data.token);
+        setSuccess(true);
+      } else {
+        setError('Ошибка при входе: данные пользователя или токен отсутствуют');
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Ошибка при входе');
     }
@@ -46,11 +51,12 @@ function LoginPage() {
           Вход
         </Typography>
         {error && <Alert severity="error" sx={{ width: '100%', mb: 2 }}>{error}</Alert>}
-        {success ? (
+        {success && (
           <Alert severity="success" sx={{ width: '100%', mb: 2 }}>
             Вход выполнен успешно! Добро пожаловать.
           </Alert>
-        ) : (
+        )}
+        {!success && (
           <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%', mt: 2 }}>
             <TextField
               margin="normal"
