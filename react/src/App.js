@@ -3,6 +3,7 @@ import './App.css';
 import Layout from './components/Layout';
 import { BrowserRouter } from 'react-router-dom';
 import ToastContainerWrapper from './components/ToastContainerWrapper';
+import { AuthProvider } from './context/AuthContext';
 
 /**
  * Main application component
@@ -10,10 +11,12 @@ import ToastContainerWrapper from './components/ToastContainerWrapper';
 function App() {
   return (
     <BrowserRouter>
-      <div className="App">
-        <Layout />
-        <ToastContainerWrapper />
-      </div>
+      <AuthProvider>
+        <div className="App">
+          <Layout />
+          <ToastContainerWrapper />
+        </div>
+      </AuthProvider>
     </BrowserRouter>
   );
 }
