@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Box, TextField, Button, Typography, Container, Paper, Alert } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import { Box, TextField, Button, Typography, Container, Paper, Alert, Link } from '@mui/material';
 import { instance } from '../api/axios';
 
 function LoginPage() {
@@ -9,6 +10,7 @@ function LoginPage() {
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -25,15 +27,22 @@ function LoginPage() {
         password: formData.password,
       });
       setSuccess(true);
+      setTimeout(() => {
+        navigate('/');
+      }, 2000);
     } catch (err) {
       setError(err.response?.data?.message || 'Ошибка при входе');
     }
   };
 
+  const handleNavigateToRegister = () => {
+    navigate('/register');
+  };
+
   return (
     <Container maxWidth="sm" sx={{ mt: 5 }}>
-      <Paper elevation={3} sx={{ p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <Typography variant="h5" gutterBottom>
+      <Paper elevation={3} sx={{ p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: '#ffffff' }}>
+        <Typography variant="h5" gutterBottom sx={{ color: '#1877F2' }}>
           Вход
         </Typography>
         {error && <Alert severity="error" sx={{ width: '100%', mb: 2 }}>{error}</Alert>}
@@ -52,6 +61,7 @@ function LoginPage() {
               type="email"
               value={formData.email}
               onChange={handleChange}
+              sx={{ backgroundColor: '#f5f6f7', borderRadius: 1 }}
             />
             <TextField
               margin="normal"
@@ -62,10 +72,16 @@ function LoginPage() {
               type="password"
               value={formData.password}
               onChange={handleChange}
+              sx={{ backgroundColor: '#f5f6f7', borderRadius: 1 }}
             />
-            <Button type="submit" fullWidth variant="contained" color="primary" sx={{ mt: 3, mb: 2 }}>
+            <Button type="submit" fullWidth variant="contained" color="primary" sx={{ mt: 3, mb: 2, backgroundColor: '#1877F2', '&:hover': { backgroundColor: '#166FE5' } }}>
               Войти
             </Button>
+            <Box sx={{ textAlign: 'center', mt: 2 }}>
+              <Typography variant="body2" sx={{ color: '#1d2129' }}>
+                Нет аккаунта? <Link component="button" onClick={handleNavigateToRegister} sx={{ color: '#1877F2', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>Зарегистрироваться</Link>
+              </Typography>
+            </Box>
           </Box>
         )}
       </Paper>
