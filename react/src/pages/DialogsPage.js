@@ -1,60 +1,81 @@
 import React, { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { instance } from '../api/axios.js';
 import { Box, Typography, Container, Paper, List, ListItem, ListItemText, ListItemAvatar, Avatar, TextField, Button, CircularProgress } from '@mui/material';
 import MessageItem from '../components/MessageItem';
-import { instance } from '../api/axios.js';
+
+const fetchDialogs = async (userId) => {
+  const response = await instance.get(`/api/dialogs/${userId}`);
+  return response.data;
+};
+
+const fetchMessages = async (dialogId) => {
+  const response = await instance.get(`/api/messages/${dialogId}`);
+  return response.data;
+};
+
+const markMessagesAsRead = async (dialogId) => {
+  await instance.post(`/api/messages/${dialogId}/read`);
+};
+
+const sendMessage = async ({ senderId, targetUserId, content }) => {
+  const response = await instance.post(`/api/messages/${senderId}/${targetUserId}`, { content });
+  return response.data;
+};
+
+const fetchCurrentUser = async () => {
+  const response = await instance.get('/api/user/me');
+  return response.data;
+};
 
 function DialogsPage() {
-  const [dialogs, setDialogs] = useState([]);
   const [selectedDialog, setSelectedDialog] = useState(null);
-  const [messages, setMessages] = useState([]);
   const [messageText, setMessageText] = useState('');
-  const [loadingDialogs, setLoadingDialogs] = useState(true);
-  const [loadingMessages, setLoadingMessages] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState(null);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const fetchCurrentUser = async () => {
-      try {
-        const response = await instance.get('/api/user/me');
-        setCurrentUserId(response.data.userId);
-        fetchDialogs(response.data.userId);
-      } catch (error) {
-        console.error('Error fetching current user:', error);
-      }
-    };
+  const { data: userData, isLoading: loadingUser, isError: userError } = useQuery(
+    ['currentUser'],
+    fetchCurrentUser,
+    { staleTime: 5 * 60 * 1000 }
+  );
 
-    fetchCurrentUser();
-  }, []);
+  const userId = userData?.userId || null;
 
-  const fetchDialogs = async (userId) => {
-    try {
-      setLoadingDialogs(true);
-      const response = await instance.get(`/api/dialogs/${userId}`);
-      setDialogs(response.data);
-    } catch (error) {
-      console.error('Error fetching dialogs:', error);
-    } finally {
-      setLoadingDialogs(false);
+  const { data: dialogs, isLoading: loadingDialogs, isError: dialogsError } = useQuery(
+    ['dialogs', userId],
+    () => fetchDialogs(userId),
+    { enabled: !!userId, staleTime: 60000 }
+  );
+
+  const { data: messages, isLoading: loadingMessages, isError: messagesError } = useQuery(
+    ['messages', selectedDialog?._id],
+    () => fetchMessages(selectedDialog._id),
+    { enabled: !!selectedDialog, staleTime: 30000 }
+  );
+
+  const markReadMutation = useMutation(
+    (dialogId) => markMessagesAsRead(dialogId),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['dialogs', userId]);
+      },
     }
-  };
+  );
 
-  const fetchMessages = async (dialogId) => {
-    try {
-      setLoadingMessages(true);
-      const response = await instance.get(`/api/messages/${dialogId}`);
-      setMessages(response.data);
-      // Mark messages as read
-      await instance.post(`/api/messages/${dialogId}/read`);
-    } catch (error) {
-      console.error('Error fetching messages:', error);
-    } finally {
-      setLoadingMessages(false);
+  const sendMessageMutation = useMutation(
+    ({ senderId, targetUserId, content }) => sendMessage({ senderId, targetUserId, content }),
+    {
+      onSuccess: (newMessage) => {
+        queryClient.invalidateQueries(['messages', selectedDialog?._id]);
+        queryClient.invalidateQueries(['dialogs', userId]);
+        setMessageText('');
+      },
     }
-  };
+  );
 
   useEffect(() => {
     if (selectedDialog) {
-      fetchMessages(selectedDialog._id);
+      markReadMutation.mutate(selectedDialog._id);
     }
   }, [selectedDialog]);
 
@@ -62,30 +83,39 @@ function DialogsPage() {
     setSelectedDialog(dialog);
   };
 
-  const handleSendMessage = async () => {
+  const handleSendMessage = () => {
     if (messageText.trim() === '' || !selectedDialog) return;
-
-    try {
-      const targetUserId = selectedDialog.participants.find(p => p._id !== currentUserId)._id;
-      const response = await instance.post(`/api/messages/${currentUserId}/${targetUserId}`, { content: messageText });
-      setMessages([...messages, response.data]);
-      setMessageText('');
-      // Refresh dialogs to update last message
-      fetchDialogs(currentUserId);
-    } catch (error) {
-      console.error('Error sending message:', error);
-    }
+    const targetUserId = selectedDialog.participants.find(p => p._id !== userId)._id;
+    sendMessageMutation.mutate({ senderId: userId, targetUserId, content: messageText });
   };
 
   const getDialogName = (dialog) => {
-    const otherParticipant = dialog.participants.find(p => p._id !== currentUserId);
+    const otherParticipant = dialog.participants.find(p => p._id !== userId);
     return otherParticipant ? otherParticipant.name || otherParticipant.username : 'Неизвестный пользователь';
   };
 
   const getDialogAvatar = (dialog) => {
-    const otherParticipant = dialog.participants.find(p => p._id !== currentUserId);
+    const otherParticipant = dialog.participants.find(p => p._id !== userId);
     return otherParticipant ? otherParticipant.avatar || '' : '';
   };
+
+  if (loadingUser || (userId && loadingDialogs)) {
+    return (
+      <Container maxWidth="lg" sx={{ mt: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+          <CircularProgress />
+        </Box>
+      </Container>
+    );
+  }
+
+  if (userError || dialogsError) {
+    return (
+      <Container maxWidth="lg" sx={{ mt: 3 }}>
+        <Typography color="error">Ошибка загрузки данных. Попробуйте позже.</Typography>
+      </Container>
+    );
+  }
 
   return (
     <Container maxWidth="lg" sx={{ mt: 3 }}>
@@ -100,7 +130,7 @@ function DialogsPage() {
             </Box>
           ) : (
             <List>
-              {dialogs.length > 0 ? (
+              {dialogs && dialogs.length > 0 ? (
                 dialogs.map((dialog) => (
                   <ListItem
                     key={dialog._id}
@@ -137,12 +167,12 @@ function DialogsPage() {
                   <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
                     <CircularProgress />
                   </Box>
-                ) : messages.length > 0 ? (
+                ) : messages && messages.length > 0 ? (
                   messages.map((message) => (
                     <MessageItem
                       key={message._id}
                       message={message}
-                      isSentByUser={message.sender._id === currentUserId}
+                      isSentByUser={message.sender._id === userId}
                     />
                   ))
                 ) : (
@@ -162,7 +192,7 @@ function DialogsPage() {
                   variant="contained" 
                   color="primary" 
                   onClick={handleSendMessage}
-                  disabled={messageText.trim() === ''}
+                  disabled={messageText.trim() === '' || sendMessageMutation.isLoading}
                 >
                   Отправить
                 </Button>
