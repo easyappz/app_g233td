@@ -5,6 +5,7 @@ import { instance } from '../api/axios';
 
 function RegisterPage() {
   const [formData, setFormData] = useState({
+    name: '',
     username: '',
     email: '',
     password: '',
@@ -35,6 +36,7 @@ function RegisterPage() {
 
     try {
       await instance.post('/api/auth/register', {
+        name: formData.name,
         username: formData.username,
         email: formData.email,
         password: formData.password,
@@ -82,6 +84,16 @@ function RegisterPage() {
           </Alert>
         ) : (
           <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%', mt: 2 }}>
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              label="Имя"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              sx={{ backgroundColor: '#f5f6f7', borderRadius: 1 }}
+            />
             <TextField
               margin="normal"
               required
