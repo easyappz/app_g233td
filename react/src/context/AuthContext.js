@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 const AuthContext = createContext();
 
@@ -8,29 +10,65 @@ export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const storedToken = localStorage.getItem('authToken');
     const storedUser = localStorage.getItem('currentUser');
     if (storedToken && storedUser) {
-      setToken(storedToken);
-      setCurrentUser(JSON.parse(storedUser));
+      try {
+        setToken(storedToken);
+        setCurrentUser(JSON.parse(storedUser));
+      } catch (error) {
+        console.error('Failed to parse stored user data:', error);
+        toast.error('Ошибка при загрузке данных пользователя. Пожалуйста, войдите снова.', {
+          position: 'top-right',
+          autoClose: 5000,
+        });
+        logout();
+      }
     }
     setLoading(false);
   }, []);
 
   const login = (userData, authToken) => {
-    setCurrentUser(userData);
-    setToken(authToken);
-    localStorage.setItem('authToken', authToken);
-    localStorage.setItem('currentUser', JSON.stringify(userData));
+    try {
+      setCurrentUser(userData);
+      setToken(authToken);
+      localStorage.setItem('authToken', authToken);
+      localStorage.setItem('currentUser', JSON.stringify(userData));
+      toast.success('Вход выполнен успешно!', {
+        position: 'top-right',
+        autoClose: 3000,
+      });
+      navigate('/home');
+    } catch (error) {
+      console.error('Login error:', error);
+      toast.error('Ошибка при входе. Пожалуйста, попробуйте снова.', {
+        position: 'top-right',
+        autoClose: 5000,
+      });
+    }
   };
 
   const logout = () => {
-    setCurrentUser(null);
-    setToken(null);
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('currentUser');
+    try {
+      setCurrentUser(null);
+      setToken(null);
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('currentUser');
+      toast.info('Вы вышли из системы.', {
+        position: 'top-right',
+        autoClose: 3000,
+      });
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error('Ошибка при выходе. Пожалуйста, попробуйте снова.', {
+        position: 'top-right',
+        autoClose: 5000,
+      });
+    }
   };
 
   const value = {
